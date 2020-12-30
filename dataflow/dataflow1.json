@@ -34,8 +34,12 @@
 				}
 			],
 			"sinks": [],
-			"transformations": [],
-			"script": "source(output(\n\t\t{Job Name} as string,\n\t\tStatus as string,\n\t\t{Is TD Extract box} as string,\n\t\t{TD extract job 1} as string,\n\t\t{TD extract job 2} as string,\n\t\t{BQ Dataset} as string,\n\t\t{BQ Tables} as string,\n\t\t{TD Tables} as string,\n\t\tprerequisite_1 as string,\n\t\tprerequisite_2 as string,\n\t\tprerequisite_3 as string,\n\t\tprerequisite_4 as string,\n\t\tprerequisite_5 as string,\n\t\tprerequisite_6 as string,\n\t\tprerequisite_7 as string,\n\t\tprerequisite_8 as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> JobList\nsource(output(\n\t\tbox as string,\n\t\tjobs as (name as string, script as string, query as string, table as string[])[]\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tdocumentForm: 'documentPerLine') ~> BoxJobMap\nsource(output(\n\t\tFilePath as string,\n\t\tLineNumber as string,\n\t\tTableName as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> TableFromQuery\nsource(output(\n\t\tFilePath as string,\n\t\tLineNumber as string,\n\t\tViewName as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> TableFromView"
+			"transformations": [
+				{
+					"name": "SelectJobColumns"
+				}
+			],
+			"script": "source(output(\n\t\t{Job Name} as string,\n\t\tStatus as string,\n\t\t{Is TD Extract box} as string,\n\t\t{TD extract job 1} as string,\n\t\t{TD extract job 2} as string,\n\t\t{BQ Dataset} as string,\n\t\t{BQ Tables} as string,\n\t\t{TD Tables} as string,\n\t\tprerequisite_1 as string,\n\t\tprerequisite_2 as string,\n\t\tprerequisite_3 as string,\n\t\tprerequisite_4 as string,\n\t\tprerequisite_5 as string,\n\t\tprerequisite_6 as string,\n\t\tprerequisite_7 as string,\n\t\tprerequisite_8 as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> JobList\nsource(output(\n\t\tbox as string,\n\t\tjobs as (name as string, script as string, query as string, table as string[])[]\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tdocumentForm: 'documentPerLine') ~> BoxJobMap\nsource(output(\n\t\tFilePath as string,\n\t\tLineNumber as string,\n\t\tTableName as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> TableFromQuery\nsource(output(\n\t\tFilePath as string,\n\t\tLineNumber as string,\n\t\tViewName as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> TableFromView\nJobList select(mapColumn(\n\t\t{Job Name},\n\t\tStatus,\n\t\t{Is TD Extract box}\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectJobColumns"
 		}
 	}
 }
