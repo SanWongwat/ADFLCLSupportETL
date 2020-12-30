@@ -43,7 +43,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@not(empty(activity('Check FIles In Blob').output.childItems))",
+						"value": "@activity('Check FIles In Blob').output.exists",
 						"type": "Expression"
 					}
 				}
