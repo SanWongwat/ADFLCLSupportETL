@@ -1,0 +1,87 @@
+{
+	"name": "ABI_job_list_xlsx",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "lcl_blob_container",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Excel",
+		"typeProperties": {
+			"sheetName": "ABI_job_list",
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": "ABI_job_list.xlsx",
+				"container": "files"
+			},
+			"firstRowAsHeader": true
+		},
+		"schema": [
+			{
+				"name": "Job Name",
+				"type": "String"
+			},
+			{
+				"name": "Status",
+				"type": "String"
+			},
+			{
+				"name": "Is TD Extract box",
+				"type": "String"
+			},
+			{
+				"name": "TD extract job 1",
+				"type": "String"
+			},
+			{
+				"name": "TD extract job 2",
+				"type": "String"
+			},
+			{
+				"name": "BQ Dataset",
+				"type": "String"
+			},
+			{
+				"name": "BQ Tables",
+				"type": "String"
+			},
+			{
+				"name": "TD Tables",
+				"type": "String"
+			},
+			{
+				"name": "prerequisite_1",
+				"type": "String"
+			},
+			{
+				"name": "prerequisite_2",
+				"type": "String"
+			},
+			{
+				"name": "prerequisite_3",
+				"type": "String"
+			},
+			{
+				"name": "prerequisite_4",
+				"type": "String"
+			},
+			{
+				"name": "prerequisite_5",
+				"type": "String"
+			},
+			{
+				"name": "prerequisite_6",
+				"type": "String"
+			},
+			{
+				"name": "prerequisite_7",
+				"type": "String"
+			},
+			{
+				"name": "prerequisite_8",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

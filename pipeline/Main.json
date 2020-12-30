@@ -1,0 +1,56 @@
+{
+	"name": "Main",
+	"properties": {
+		"activities": [
+			{
+				"name": "Check FIles In Blob",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ABI_job_list_xlsx",
+						"type": "DatasetReference"
+					},
+					"fieldList": [
+						"exists"
+					],
+					"storeSettings": {
+						"type": "AzureBlobStorageReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					}
+				}
+			},
+			{
+				"name": "If Files Exist",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Check FIles In Blob",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@not(empty(activity('Check FIles In Blob').output.childItems))",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2020-12-30T03:23:49Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
