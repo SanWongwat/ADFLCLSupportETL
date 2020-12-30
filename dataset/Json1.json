@@ -1,0 +1,49 @@
+{
+	"name": "Json1",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "lcl_blob_container",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": "ABI_MAP_BOXES_AND_JOBS.json",
+				"container": "files"
+			}
+		},
+		"schema": {
+			"type": "object",
+			"properties": {
+				"box": {
+					"type": "string"
+				},
+				"jobs": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"name": {
+								"type": "string"
+							},
+							"script": {
+								"type": "string"
+							},
+							"query": {
+								"type": "string"
+							},
+							"table": {
+								"type": "array",
+								"items": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
