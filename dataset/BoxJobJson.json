@@ -17,40 +17,27 @@
 		"schema": {
 			"type": "object",
 			"properties": {
-				"box_list": {
+				"box": {
+					"type": "string"
+				},
+				"jobs": {
 					"type": "array",
 					"items": {
 						"type": "object",
 						"properties": {
-							"box": {
+							"name": {
 								"type": "string"
 							},
-							"jobs": {
+							"script": {
+								"type": "string"
+							},
+							"query": {
+								"type": "string"
+							},
+							"table": {
 								"type": "array",
 								"items": {
-									"type": "object",
-									"properties": {
-										"name": {
-											"type": "string"
-										},
-										"script": {
-											"type": "string"
-										},
-										"query": {
-											"type": "string"
-										},
-										"table": {
-											"type": "array",
-											"items": {
-												"type": "object",
-												"properties": {
-													"name": {
-														"type": "string"
-													}
-												}
-											}
-										}
-									}
+									"type": "string"
 								}
 							}
 						}
