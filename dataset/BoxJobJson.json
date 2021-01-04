@@ -10,7 +10,7 @@
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobStorageLocation",
-				"fileName": "test.json",
+				"fileName": "ABI_MAP_BOXES_AND_JOBS.json",
 				"container": "files"
 			}
 		},
