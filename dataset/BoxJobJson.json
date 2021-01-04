@@ -19,34 +19,6 @@
 			"properties": {
 				"box": {
 					"type": "string"
-				},
-				"jobs": {
-					"type": "array",
-					"items": {
-						"type": "object",
-						"properties": {
-							"name": {
-								"type": "string"
-							},
-							"script": {
-								"type": "string"
-							},
-							"query": {
-								"type": "string"
-							},
-							"table": {
-								"type": "array",
-								"items": {
-									"type": "object",
-									"properties": {
-										"name": {
-											"type": "string"
-										}
-									}
-								}
-							}
-						}
-					}
 				}
 			}
 		}
