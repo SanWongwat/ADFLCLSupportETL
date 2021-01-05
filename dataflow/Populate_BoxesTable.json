@@ -1,5 +1,5 @@
 {
-	"name": "dataflow1",
+	"name": "Populate_BoxesTable",
 	"properties": {
 		"type": "MappingDataFlow",
 		"typeProperties": {
@@ -10,20 +10,6 @@
 						"type": "DatasetReference"
 					},
 					"name": "BoxList"
-				},
-				{
-					"dataset": {
-						"referenceName": "BoxJobMap",
-						"type": "DatasetReference"
-					},
-					"name": "BoxJobMap"
-				},
-				{
-					"dataset": {
-						"referenceName": "table_from_query_txt",
-						"type": "DatasetReference"
-					},
-					"name": "TableFromQuery"
 				}
 			],
 			"sinks": [
@@ -46,7 +32,7 @@
 					"name": "ConvertBoolToBit"
 				}
 			],
-			"script": "source(output(\n\t\t{Job Name} as string,\n\t\tStatus as string,\n\t\t{Is TD Extract box} as string,\n\t\t{TD extract job 1} as string,\n\t\t{TD extract job 2} as string,\n\t\t{BQ Dataset} as string,\n\t\t{BQ Tables} as string,\n\t\t{TD Tables} as string,\n\t\tprerequisite_1 as string,\n\t\tprerequisite_2 as string,\n\t\tprerequisite_3 as string,\n\t\tprerequisite_4 as string,\n\t\tprerequisite_5 as string,\n\t\tprerequisite_6 as string,\n\t\tprerequisite_7 as string,\n\t\tprerequisite_8 as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> BoxList\nsource(output(\n\t\tbox as string,\n\t\tjobs__name as string,\n\t\tjobs__script as string,\n\t\tjobs__query as string,\n\t\tjobs__table__name as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> BoxJobMap\nsource(output(\n\t\tFilePath as string,\n\t\tLineNumber as string,\n\t\tDatasetTableName as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> TableFromQuery\nBoxList select(mapColumn(\n\t\t{Job Name},\n\t\tStatus,\n\t\t{Is TD Extract box}\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectBoxColumns\nConvertBoolToBit alterRow(upsertIf(isNull({Job Name})==false())) ~> UpsertBoxes\nSelectBoxColumns derive(HasTDExtraction = toBoolean({Is TD Extract box})) ~> ConvertBoolToBit\nUpsertBoxes sink(input(\n\t\tID as integer,\n\t\tName as string,\n\t\tHasTDExtraction as boolean,\n\t\tStatus as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:true,\n\tupsertable:true,\n\tformat: 'table',\n\tmapColumn(\n\t\tName = {Job Name},\n\t\tHasTDExtraction,\n\t\tStatus\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError') ~> SinkToBoxesTable"
+			"script": "source(output(\n\t\t{Job Name} as string,\n\t\tStatus as string,\n\t\t{Is TD Extract box} as string,\n\t\t{TD extract job 1} as string,\n\t\t{TD extract job 2} as string,\n\t\t{BQ Dataset} as string,\n\t\t{BQ Tables} as string,\n\t\t{TD Tables} as string,\n\t\tprerequisite_1 as string,\n\t\tprerequisite_2 as string,\n\t\tprerequisite_3 as string,\n\t\tprerequisite_4 as string,\n\t\tprerequisite_5 as string,\n\t\tprerequisite_6 as string,\n\t\tprerequisite_7 as string,\n\t\tprerequisite_8 as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> BoxList\nBoxList select(mapColumn(\n\t\t{Job Name},\n\t\tStatus,\n\t\t{Is TD Extract box}\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectBoxColumns\nConvertBoolToBit alterRow(upsertIf(isNull({Job Name})==false())) ~> UpsertBoxes\nSelectBoxColumns derive(HasTDExtraction = toBoolean({Is TD Extract box})) ~> ConvertBoolToBit\nUpsertBoxes sink(input(\n\t\tID as integer,\n\t\tName as string,\n\t\tHasTDExtraction as boolean,\n\t\tStatus as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:true,\n\tupsertable:true,\n\tformat: 'table',\n\tmapColumn(\n\t\tName = {Job Name},\n\t\tHasTDExtraction,\n\t\tStatus\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError') ~> SinkToBoxesTable"
 		}
 	}
 }
