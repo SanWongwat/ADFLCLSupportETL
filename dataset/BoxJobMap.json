@@ -1,5 +1,5 @@
 {
-	"name": "BoxJobMapp",
+	"name": "BoxJobMap",
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "lcl_blob_container",
