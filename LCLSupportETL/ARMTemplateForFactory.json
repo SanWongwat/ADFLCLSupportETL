@@ -1,0 +1,468 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "LCLSupportETL"
+		},
+		"autosys_job_db_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'autosys_job_db'"
+		},
+		"lcl_blob_container_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'lcl_blob_container'"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/Main')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Check FIles In Blob",
+						"type": "GetMetadata",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "Folders",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"fieldList": [
+								"childItems",
+								"exists"
+							],
+							"storeSettings": {
+								"type": "AzureBlobStorageReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							}
+						}
+					},
+					{
+						"name": "If Files Exist",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "Check FIles In Blob",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@not(empty(activity('Check FIles In Blob').output.childItems))",
+								"type": "Expression"
+							},
+							"ifTrueActivities": [
+								{
+									"name": "PopulateBoxesTable",
+									"type": "ExecuteDataFlow",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataflow": {
+											"referenceName": "PopulateBoxesTable",
+											"type": "DataFlowReference",
+											"parameters": {},
+											"datasetParameters": {
+												"BoxList": {},
+												"UpsertBoxesTable": {}
+											}
+										},
+										"staging": {},
+										"compute": {
+											"coreCount": 8,
+											"computeType": "General"
+										},
+										"traceLevel": "Fine"
+									}
+								}
+							]
+						}
+					}
+				],
+				"annotations": [],
+				"lastPublishTime": "2020-12-30T03:23:49Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/Folders')]",
+				"[concat(variables('factoryId'), '/dataflows/PopulateBoxesTable')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ABI_job_list_xlsx')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "lcl_blob_container",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Excel",
+				"typeProperties": {
+					"sheetName": "ABI_job_list",
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "ABI_job_list.xlsx",
+						"container": "files"
+					},
+					"firstRowAsHeader": true
+				},
+				"schema": [
+					{
+						"name": "Job Name",
+						"type": "String"
+					},
+					{
+						"name": "Status",
+						"type": "String"
+					},
+					{
+						"name": "Is TD Extract box",
+						"type": "String"
+					},
+					{
+						"name": "TD extract job 1",
+						"type": "String"
+					},
+					{
+						"name": "TD extract job 2",
+						"type": "String"
+					},
+					{
+						"name": "BQ Dataset",
+						"type": "String"
+					},
+					{
+						"name": "BQ Tables",
+						"type": "String"
+					},
+					{
+						"name": "TD Tables",
+						"type": "String"
+					},
+					{
+						"name": "prerequisite_1",
+						"type": "String"
+					},
+					{
+						"name": "prerequisite_2",
+						"type": "String"
+					},
+					{
+						"name": "prerequisite_3",
+						"type": "String"
+					},
+					{
+						"name": "prerequisite_4",
+						"type": "String"
+					},
+					{
+						"name": "prerequisite_5",
+						"type": "String"
+					},
+					{
+						"name": "prerequisite_6",
+						"type": "String"
+					},
+					{
+						"name": "prerequisite_7",
+						"type": "String"
+					},
+					{
+						"name": "prerequisite_8",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/lcl_blob_container')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/BoxJobMap')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "lcl_blob_container",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "ABI_MAP_BOXES_AND_JOBS.csv",
+						"container": "files"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "box",
+						"type": "String"
+					},
+					{
+						"name": "jobs__name",
+						"type": "String"
+					},
+					{
+						"name": "jobs__script",
+						"type": "String"
+					},
+					{
+						"name": "jobs__query",
+						"type": "String"
+					},
+					{
+						"name": "jobs__table__name",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/lcl_blob_container')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/BoxesTable')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "autosys_job_db",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "ID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Name",
+						"type": "varchar"
+					},
+					{
+						"name": "HasTDExtraction",
+						"type": "bit"
+					},
+					{
+						"name": "Status",
+						"type": "varchar"
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "Boxes"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/autosys_job_db')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Folders')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "lcl_blob_container",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Excel",
+				"typeProperties": {
+					"sheetName": "ABI_job_list",
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"container": "files"
+					}
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/lcl_blob_container')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/table_from_query_txt')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "lcl_blob_container",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "Table_from_query_statement.txt",
+						"container": "files"
+					},
+					"columnDelimiter": ":",
+					"escapeChar": "\\",
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/lcl_blob_container')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/table_from_view_txt')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "lcl_blob_container",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "Table_from_view_statement.txt",
+						"container": "files"
+					},
+					"columnDelimiter": ":",
+					"escapeChar": "\\",
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/lcl_blob_container')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/autosys_job_db')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "A link to autosys-job database",
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"connectionString": "[parameters('autosys_job_db_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/lcl_blob_container')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "A link to blob storage",
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('lcl_blob_container_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PopulateBoxesTable')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "ABI_job_list_xlsx",
+								"type": "DatasetReference"
+							},
+							"name": "BoxList"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "BoxesTable",
+								"type": "DatasetReference"
+							},
+							"name": "UpsertBoxesTable"
+						}
+					],
+					"transformations": [
+						{
+							"name": "SelectBoxColumns"
+						},
+						{
+							"name": "UpsertBoxes"
+						},
+						{
+							"name": "ConvertBoolToBit"
+						}
+					],
+					"script": "source(output(\n\t\t{Job Name} as string,\n\t\tStatus as string,\n\t\t{Is TD Extract box} as string,\n\t\t{TD extract job 1} as string,\n\t\t{TD extract job 2} as string,\n\t\t{BQ Dataset} as string,\n\t\t{BQ Tables} as string,\n\t\t{TD Tables} as string,\n\t\tprerequisite_1 as string,\n\t\tprerequisite_2 as string,\n\t\tprerequisite_3 as string,\n\t\tprerequisite_4 as string,\n\t\tprerequisite_5 as string,\n\t\tprerequisite_6 as string,\n\t\tprerequisite_7 as string,\n\t\tprerequisite_8 as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> BoxList\nBoxList select(mapColumn(\n\t\t{Job Name},\n\t\tStatus,\n\t\t{Is TD Extract box}\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectBoxColumns\nConvertBoolToBit alterRow(upsertIf(isNull({Job Name})==false())) ~> UpsertBoxes\nSelectBoxColumns derive(HasTDExtraction = toBoolean({Is TD Extract box})) ~> ConvertBoolToBit\nUpsertBoxes sink(input(\n\t\tID as integer,\n\t\tName as string,\n\t\tHasTDExtraction as boolean,\n\t\tStatus as string\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:true,\n\tkeys:['Name'],\n\tformat: 'table',\n\tmapColumn(\n\t\tName = {Job Name},\n\t\tStatus,\n\t\tHasTDExtraction\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError') ~> UpsertBoxesTable"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ABI_job_list_xlsx')]",
+				"[concat(variables('factoryId'), '/datasets/BoxesTable')]"
+			]
+		}
+	]
+}
