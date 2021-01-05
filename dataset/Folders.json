@@ -8,6 +8,7 @@
 		"annotations": [],
 		"type": "Excel",
 		"typeProperties": {
+			"sheetName": "ABI_job_list",
 			"location": {
 				"type": "AzureBlobStorageLocation",
 				"container": "files"
