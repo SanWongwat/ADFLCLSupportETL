@@ -1,0 +1,44 @@
+{
+	"name": "BoxJobMapp",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "lcl_blob_container",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": "ABI_MAP_BOXES_AND_JOBS.csv",
+				"container": "files"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "box",
+				"type": "String"
+			},
+			{
+				"name": "jobs__name",
+				"type": "String"
+			},
+			{
+				"name": "jobs__script",
+				"type": "String"
+			},
+			{
+				"name": "jobs__query",
+				"type": "String"
+			},
+			{
+				"name": "jobs__table__name",
+				"type": "String"
+			}
+		]
+	}
+}
