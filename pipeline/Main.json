@@ -49,7 +49,7 @@
 					},
 					"ifTrueActivities": [
 						{
-							"name": "dataflow1",
+							"name": "PopulateBoxesTable",
 							"type": "ExecuteDataFlow",
 							"dependsOn": [],
 							"policy": {
@@ -62,7 +62,7 @@
 							"userProperties": [],
 							"typeProperties": {
 								"dataflow": {
-									"referenceName": "Populate_BoxesTable",
+									"referenceName": "PopulateBoxesTable",
 									"type": "DataFlowReference"
 								},
 								"compute": {
