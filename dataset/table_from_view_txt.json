@@ -1,0 +1,32 @@
+{
+	"name": "table_from_view_txt",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "lcl_blob_container",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": "Table_from_view_statement.txt",
+				"container": "files"
+			},
+			"columnDelimiter": ":",
+			"escapeChar": "\\",
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"type": "String"
+			},
+			{
+				"type": "String"
+			},
+			{
+				"type": "String"
+			}
+		]
+	}
+}

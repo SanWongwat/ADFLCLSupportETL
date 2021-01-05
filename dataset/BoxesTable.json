@@ -1,0 +1,34 @@
+{
+	"name": "BoxesTable",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "autosys_job_db",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "ID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "Name",
+				"type": "varchar"
+			},
+			{
+				"name": "HasTDExtraction",
+				"type": "bit"
+			},
+			{
+				"name": "Status",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "Boxes"
+		}
+	}
+}
