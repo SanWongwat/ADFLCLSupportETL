@@ -1,0 +1,34 @@
+{
+	"name": "TablesTable",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "autosys_job_db",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "ID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "Name",
+				"type": "varchar"
+			},
+			{
+				"name": "Dataset",
+				"type": "varchar"
+			},
+			{
+				"name": "IsFromTD",
+				"type": "bit"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "Tables"
+		}
+	}
+}
