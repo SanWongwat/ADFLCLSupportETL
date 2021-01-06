@@ -1,9 +1,9 @@
 {
-	"name": "TestPopulatedTables",
+	"name": "TestPopulateJobs",
 	"properties": {
 		"activities": [
 			{
-				"name": "PopulateTablesTable",
+				"name": "PopulateJobsTable",
 				"type": "ExecuteDataFlow",
 				"dependsOn": [],
 				"policy": {
@@ -16,7 +16,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"dataflow": {
-						"referenceName": "PopulateTablesTable",
+						"referenceName": "PopulateJobsTable",
 						"type": "DataFlowReference"
 					},
 					"compute": {
