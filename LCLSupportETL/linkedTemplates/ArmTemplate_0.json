@@ -252,6 +252,120 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/JobsTable')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "autosys_job_db",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "ID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Name",
+						"type": "varchar"
+					},
+					{
+						"name": "BoxId",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "ScriptName",
+						"type": "varchar"
+					},
+					{
+						"name": "QueryName",
+						"type": "varchar"
+					},
+					{
+						"name": "IsTDExtraction",
+						"type": "bit"
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "Jobs"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/autosys_job_db')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/TablesTable')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "autosys_job_db",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "ID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Name",
+						"type": "varchar"
+					},
+					{
+						"name": "Dataset",
+						"type": "varchar"
+					},
+					{
+						"name": "IsFromTD",
+						"type": "bit"
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "Tables"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/autosys_job_db')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/TestResult')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "lcl_blob_container",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"container": "files"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/lcl_blob_container')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/table_from_query_txt')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -370,6 +484,139 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/PopulateJobsTable')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "BoxJobMap",
+								"type": "DatasetReference"
+							},
+							"name": "BoxJobMap"
+						},
+						{
+							"dataset": {
+								"referenceName": "BoxesTable",
+								"type": "DatasetReference"
+							},
+							"name": "BoxesTable"
+						},
+						{
+							"dataset": {
+								"referenceName": "ABI_job_list_xlsx",
+								"type": "DatasetReference"
+							},
+							"name": "BoxList"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "TestResult",
+								"type": "DatasetReference"
+							},
+							"name": "SinkJobsTable"
+						}
+					],
+					"transformations": [
+						{
+							"name": "CleanData"
+						},
+						{
+							"name": "JoinBoxes"
+						},
+						{
+							"name": "UpsertJobs"
+						},
+						{
+							"name": "SelectTDExtractionJobs"
+						},
+						{
+							"name": "UnpivotJobColumns"
+						},
+						{
+							"name": "LookupTDExtractionJob"
+						},
+						{
+							"name": "GenIsTDExtraction"
+						},
+						{
+							"name": "SelectJobData"
+						}
+					],
+					"script": "source(output(\n\t\tbox as string,\n\t\tjobs__name as string,\n\t\tjobs__script as string,\n\t\tjobs__query as string,\n\t\tjobs__table__name as string\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> BoxJobMap\nsource(output(\n\t\tID as integer,\n\t\tName as string,\n\t\tHasTDExtraction as boolean,\n\t\tStatus as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> BoxesTable\nsource(output(\n\t\t{Job Name} as string,\n\t\tStatus as string,\n\t\t{Is TD Extract box} as string,\n\t\t{TD extract job 1} as string,\n\t\t{TD extract job 2} as string,\n\t\t{BQ Dataset} as string,\n\t\t{BQ Tables} as string,\n\t\t{TD Tables} as string,\n\t\tprerequisite_1 as string,\n\t\tprerequisite_2 as string,\n\t\tprerequisite_3 as string,\n\t\tprerequisite_4 as string,\n\t\tprerequisite_5 as string,\n\t\tprerequisite_6 as string,\n\t\tprerequisite_7 as string,\n\t\tprerequisite_8 as string\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> BoxList\nBoxJobMap derive(each(match(type=='string'), $$ = trim($$))) ~> CleanData\nCleanData, BoxesTable join(box == Name,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> JoinBoxes\nSelectJobData alterRow(upsertIf(true())) ~> UpsertJobs\nBoxList select(mapColumn(\n\t\tJobName = {Job Name},\n\t\tTDExtractJob1 = {TD extract job 1},\n\t\tTDExtractJob2 = {TD extract job 2}\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectTDExtractionJobs\nSelectTDExtractionJobs unpivot(output(\n\t\tTDExtractionJob as string,\n\t\tTDExtractJob1 as string,\n\t\tTDExtractJob2 as string\n\t),\n\tungroupBy(JobName),\n\tlateral: true,\n\tignoreNullPivots: true) ~> UnpivotJobColumns\nJoinBoxes, UnpivotJobColumns lookup(trim(jobs__name) == trim(TDExtractJob1),\n\tmultiple: false,\n\tpickup: 'any',\n\tbroadcast: 'auto')~> LookupTDExtractionJob\nLookupTDExtractionJob derive(IsTDExtraction = case(not(isNull(TDExtractJob1)), true(), false())) ~> GenIsTDExtraction\nGenIsTDExtraction select(mapColumn(\n\t\tBoxID = ID,\n\t\tName = jobs__name,\n\t\tScriptName = jobs__script,\n\t\tQueryName = jobs__query,\n\t\tTableName = jobs__table__name,\n\t\tIsTDExtraction\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectJobData\nUpsertJobs sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['TestSinkJobs.csv'],\n\tmapColumn(\n\t\tName,\n\t\tBoxId = BoxID,\n\t\tScriptName,\n\t\tQueryName,\n\t\tIsTDExtraction\n\t),\n\tpartitionBy('hash', 1),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SinkJobsTable"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/BoxJobMap')]",
+				"[concat(variables('factoryId'), '/datasets/BoxesTable')]",
+				"[concat(variables('factoryId'), '/datasets/ABI_job_list_xlsx')]",
+				"[concat(variables('factoryId'), '/datasets/TestResult')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PopulateTablesTable')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "table_from_query_txt",
+								"type": "DatasetReference"
+							},
+							"name": "TableFromQuery"
+						},
+						{
+							"dataset": {
+								"referenceName": "table_from_view_txt",
+								"type": "DatasetReference"
+							},
+							"name": "TableFromView"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "TestResult",
+								"type": "DatasetReference"
+							},
+							"name": "TestResult"
+						}
+					],
+					"transformations": [
+						{
+							"name": "SplitTFQ"
+						},
+						{
+							"name": "SplitTFV"
+						},
+						{
+							"name": "CombineData"
+						},
+						{
+							"name": "DistinctData"
+						},
+						{
+							"name": "UpsertTables"
+						}
+					],
+					"script": "source(output(\n\t\tFilePath as string,\n\t\tLineNumber as string,\n\t\tDatasetTableName as string\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> TableFromQuery\nsource(output(\n\t\tFilePath as string,\n\t\tLineNumber as string,\n\t\tDatasetTableName as string\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> TableFromView\nTableFromQuery derive(Name = split(DatasetTableName, '.')[1],\n\t\tDataset = split(DatasetTableName, '.')[0]) ~> SplitTFQ\nTableFromView derive(Name = split(DatasetTableName, '.')[2],\n\t\tDataset = split(DatasetTableName, '.')[1]) ~> SplitTFV\nSplitTFQ, SplitTFV union(byName: true)~> CombineData\nCombineData aggregate(groupBy(Dataset,\n\t\tName),\n\teach(match(name!='Dataset'&&name!='Name'), $$ = first($$))) ~> DistinctData\nDistinctData alterRow(upsertIf(true())) ~> UpsertTables\nUpsertTables sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['TestSinkTables.csv'],\n\tmapColumn(\n\t\tDataset,\n\t\tName,\n\t\tFilePath,\n\t\tLineNumber,\n\t\tDatasetTableName\n\t),\n\tpartitionBy('hash', 1),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> TestResult"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/table_from_query_txt')]",
+				"[concat(variables('factoryId'), '/datasets/table_from_view_txt')]",
+				"[concat(variables('factoryId'), '/datasets/TestResult')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/Main')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
@@ -451,6 +698,37 @@
 										},
 										"traceLevel": "Fine"
 									}
+								},
+								{
+									"name": "PopulateTablesTable",
+									"type": "ExecuteDataFlow",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataflow": {
+											"referenceName": "PopulateTablesTable",
+											"type": "DataFlowReference",
+											"parameters": {},
+											"datasetParameters": {
+												"TableFromQuery": {},
+												"TableFromView": {},
+												"TestResult": {}
+											}
+										},
+										"staging": {},
+										"compute": {
+											"coreCount": 8,
+											"computeType": "General"
+										},
+										"traceLevel": "Fine"
+									}
 								}
 							]
 						}
@@ -461,7 +739,97 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/datasets/Folders')]",
-				"[concat(variables('factoryId'), '/dataflows/PopulateBoxesTable')]"
+				"[concat(variables('factoryId'), '/dataflows/PopulateBoxesTable')]",
+				"[concat(variables('factoryId'), '/dataflows/PopulateTablesTable')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/TestPopulateJobs')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "PopulateJobsTable",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "PopulateJobsTable",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"BoxJobMap": {},
+									"BoxesTable": {},
+									"BoxList": {},
+									"SinkJobsTable": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/PopulateJobsTable')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/TestPopulatedTables')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "PopulateTablesTable",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "PopulateTablesTable",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"TableFromQuery": {},
+									"TableFromView": {},
+									"TestResult": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/PopulateTablesTable')]"
 			]
 		}
 	]
