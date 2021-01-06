@@ -1,0 +1,43 @@
+{
+	"name": "JobsTable",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "autosys_job_db",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "ID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "Name",
+				"type": "varchar"
+			},
+			{
+				"name": "BoxId",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "ScriptName",
+				"type": "varchar"
+			},
+			{
+				"name": "QueryName",
+				"type": "varchar"
+			},
+			{
+				"name": "IsTDExtraction",
+				"type": "bit"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "Jobs"
+		}
+	}
+}
