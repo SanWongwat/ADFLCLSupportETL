@@ -27,9 +27,16 @@
 				}
 			},
 			{
-				"name": "dataflow1",
+				"name": "PopulateJobsTable",
 				"type": "ExecuteDataFlow",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "PopulateTablesTable",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"policy": {
 					"timeout": "7.00:00:00",
 					"retry": 0,
