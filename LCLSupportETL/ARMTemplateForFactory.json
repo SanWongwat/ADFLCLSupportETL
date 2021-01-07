@@ -123,7 +123,7 @@
 											"datasetParameters": {
 												"TableFromQuery": {},
 												"TableFromView": {},
-												"TestResult": {}
+												"SinkTablesTable": {}
 											}
 										},
 										"staging": {},
@@ -264,7 +264,7 @@
 								"datasetParameters": {
 									"TableFromQuery": {},
 									"TableFromView": {},
-									"TestResult": {}
+									"SinkTablesTable": {}
 								}
 							},
 							"staging": {},
@@ -932,10 +932,10 @@
 					"sinks": [
 						{
 							"dataset": {
-								"referenceName": "TablesTable",
+								"referenceName": "TestResult",
 								"type": "DatasetReference"
 							},
-							"name": "TestResult"
+							"name": "SinkTablesTable"
 						}
 					],
 					"transformations": [
@@ -949,9 +949,6 @@
 							"name": "CombineData"
 						},
 						{
-							"name": "DistinctData"
-						},
-						{
 							"name": "UpsertTables"
 						},
 						{
@@ -961,13 +958,13 @@
 							"name": "DistinctTFV"
 						}
 					],
-					"script": "source(output(\n\t\tFilePath as string,\n\t\tLineNumber as string,\n\t\tDatasetTableName as string\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> TableFromQuery\nsource(output(\n\t\tFilePath as string,\n\t\tLineNumber as string,\n\t\tDatasetTableName as string\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> TableFromView\nDistinctTFQ derive(Dataset = split(DatasetTableName, '.')[1],\n\t\tName = split(DatasetTableName, '.')[2]) ~> SplitTFQ\nDistinctTFV derive(Dataset = split(DatasetTableName, '.')[2],\n\t\tName = split(DatasetTableName, '.')[3]) ~> SplitTFV\nSplitTFQ, SplitTFV union(byName: true)~> CombineData\nCombineData aggregate(groupBy(Dataset,\n\t\tName),\n\tFilePath = first(FilePath)) ~> DistinctData\nDistinctData alterRow(upsertIf(true())) ~> UpsertTables\nTableFromQuery aggregate(groupBy(FilePath,\n\t\tDatasetTableName),\n\tLineNumber = first(LineNumber)) ~> DistinctTFQ\nTableFromView aggregate(groupBy(FilePath,\n\t\tDatasetTableName),\n\tLineNumber = first(LineNumber)) ~> DistinctTFV\nUpsertTables sink(input(\n\t\tID as integer,\n\t\tName as string,\n\t\tDataset as string,\n\t\tIsFromTD as boolean\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tmapColumn(\n\t\tDataset,\n\t\tName\n\t),\n\tpartitionBy('hash', 1),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError') ~> TestResult"
+					"script": "source(output(\n\t\tFilePath as string,\n\t\tLineNumber as string,\n\t\tDatasetTableName as string\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> TableFromQuery\nsource(output(\n\t\tFilePath as string,\n\t\tLineNumber as string,\n\t\tDatasetTableName as string\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> TableFromView\nDistinctTFQ derive(Dataset = split(DatasetTableName, '.')[1],\n\t\tName = split(DatasetTableName, '.')[2]) ~> SplitTFQ\nDistinctTFV derive(Dataset = split(DatasetTableName, '.')[2],\n\t\tName = split(DatasetTableName, '.')[3]) ~> SplitTFV\nSplitTFQ, SplitTFV union(byName: true)~> CombineData\nCombineData alterRow(upsertIf(true())) ~> UpsertTables\nTableFromQuery aggregate(groupBy(FilePath,\n\t\tDatasetTableName),\n\tLineNumber = first(LineNumber)) ~> DistinctTFQ\nTableFromView aggregate(groupBy(FilePath,\n\t\tDatasetTableName),\n\tLineNumber = first(LineNumber)) ~> DistinctTFV\nUpsertTables sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['TestSinkTables.csv'],\n\tmapColumn(\n\t\tDataset,\n\t\tName,\n\t\tFilePath\n\t),\n\tpartitionBy('hash', 1),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SinkTablesTable"
 				}
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/datasets/table_from_query_txt')]",
 				"[concat(variables('factoryId'), '/datasets/table_from_view_txt')]",
-				"[concat(variables('factoryId'), '/datasets/TablesTable')]"
+				"[concat(variables('factoryId'), '/datasets/TestResult')]"
 			]
 		}
 	]
