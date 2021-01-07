@@ -623,6 +623,92 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/PopulateLinkTable')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "TablesTable",
+								"type": "DatasetReference"
+							},
+							"name": "TablesTable"
+						},
+						{
+							"dataset": {
+								"referenceName": "JobsTable",
+								"type": "DatasetReference"
+							},
+							"name": "JobsTable"
+						},
+						{
+							"dataset": {
+								"referenceName": "BoxJobMap",
+								"type": "DatasetReference"
+							},
+							"name": "BoxJobMap"
+						},
+						{
+							"dataset": {
+								"referenceName": "table_from_query_txt",
+								"type": "DatasetReference"
+							},
+							"name": "TableFromQuery"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "TestResult",
+								"type": "DatasetReference"
+							},
+							"name": "SinkTablesInJobs"
+						}
+					],
+					"transformations": [
+						{
+							"name": "DistinctTFQ"
+						},
+						{
+							"name": "SplitTFQ"
+						},
+						{
+							"name": "JoinGetJobID"
+						},
+						{
+							"name": "JoinGetTableID"
+						},
+						{
+							"name": "SelectIDs1"
+						},
+						{
+							"name": "JoinGetJobID2"
+						},
+						{
+							"name": "JoinGetTableID2"
+						},
+						{
+							"name": "SelectIDs2"
+						},
+						{
+							"name": "CombineData"
+						}
+					],
+					"script": "source(output(\n\t\tID as integer,\n\t\tName as string,\n\t\tDataset as string,\n\t\tIsFromTD as boolean\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> TablesTable\nsource(output(\n\t\tID as integer,\n\t\tName as string,\n\t\tBoxId as integer,\n\t\tScriptName as string,\n\t\tQueryName as string,\n\t\tIsTDExtraction as boolean\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> JobsTable\nsource(output(\n\t\tbox as string,\n\t\tjobs__name as string,\n\t\tjobs__script as string,\n\t\tjobs__query as string,\n\t\tjobs__table__name as string\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> BoxJobMap\nsource(output(\n\t\tFilePath as string,\n\t\tLineNumber as string,\n\t\tDatasetTableName as string\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> TableFromQuery\nTableFromQuery aggregate(groupBy(FilePath,\n\t\tDatasetTableName),\n\tLineNumber = first(LineNumber)) ~> DistinctTFQ\nDistinctTFQ derive(QueryName = split(FilePath, '/')[5],\n\t\tDataset = split(DatasetTableName, '.')[2],\n\t\tTableName = split(DatasetTableName, '.')[3]) ~> SplitTFQ\nSplitTFQ, JobsTable join(SplitTFQ@QueryName == JobsTable@QueryName,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> JoinGetJobID\nJoinGetJobID, TablesTable join(SplitTFQ@Dataset == TablesTable@Dataset\n\t&& TableName == TablesTable@Name,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> JoinGetTableID\nJoinGetTableID select(mapColumn(\n\t\tJobID = JobsTable@ID,\n\t\tTableID = TablesTable@ID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectIDs1\nBoxJobMap, JobsTable join(jobs__name == Name,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> JoinGetJobID2\nJoinGetJobID2, TablesTable join(jobs__table__name == TablesTable@Name,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> JoinGetTableID2\nJoinGetTableID2 select(mapColumn(\n\t\tJobID = JobsTable@ID,\n\t\tTableID = TablesTable@ID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectIDs2\nSelectIDs1, SelectIDs2 union(byName: true)~> CombineData\nCombineData sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['TestTablesInJobs.csv'],\n\tpartitionBy('hash', 1),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SinkTablesInJobs"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/TablesTable')]",
+				"[concat(variables('factoryId'), '/datasets/JobsTable')]",
+				"[concat(variables('factoryId'), '/datasets/BoxJobMap')]",
+				"[concat(variables('factoryId'), '/datasets/table_from_query_txt')]",
+				"[concat(variables('factoryId'), '/datasets/TestResult')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/Main')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
@@ -836,6 +922,52 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/dataflows/PopulateTablesTable')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PopulateLinkTables')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "PopulateLinkTables",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "PopulateLinkTable",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"TablesTable": {},
+									"JobsTable": {},
+									"BoxJobMap": {},
+									"TableFromQuery": {},
+									"SinkTablesInJobs": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/PopulateLinkTable')]"
 			]
 		}
 	]
