@@ -43,9 +43,15 @@
 				},
 				{
 					"name": "UpsertTables"
+				},
+				{
+					"name": "DistinctTFQ"
+				},
+				{
+					"name": "DistinctTFV"
 				}
 			],
-			"script": "source(output(\n\t\tFilePath as string,\n\t\tLineNumber as string,\n\t\tDatasetTableName as string\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> TableFromQuery\nsource(output(\n\t\tFilePath as string,\n\t\tLineNumber as string,\n\t\tDatasetTableName as string\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> TableFromView\nTableFromQuery derive(Dataset = split(DatasetTableName, '.')[1],\n\t\tName = split(DatasetTableName, '.')[2]) ~> SplitTFQ\nTableFromView derive(Name = split(DatasetTableName, '.')[2],\n\t\tDataset = split(DatasetTableName, '.')[1]) ~> SplitTFV\nSplitTFQ, SplitTFV union(byName: true)~> CombineData\nCombineData aggregate(groupBy(Dataset,\n\t\tName),\n\teach(match(name!='Dataset'&&name!='Name'), $$ = first($$))) ~> DistinctData\nDistinctData alterRow(upsertIf(true())) ~> UpsertTables\nUpsertTables sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['TestSinkTables.csv'],\n\tmapColumn(\n\t\tDataset,\n\t\tName,\n\t\tFilePath,\n\t\tLineNumber,\n\t\tDatasetTableName\n\t),\n\tpartitionBy('hash', 1),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> TestResult"
+			"script": "source(output(\n\t\tFilePath as string,\n\t\tLineNumber as string,\n\t\tDatasetTableName as string\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> TableFromQuery\nsource(output(\n\t\tFilePath as string,\n\t\tLineNumber as string,\n\t\tDatasetTableName as string\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> TableFromView\nDistinctTFQ derive(Dataset = split(DatasetTableName, '.')[1],\n\t\tName = split(DatasetTableName, '.')[2]) ~> SplitTFQ\nDistinctTFV derive(Dataset = split(DatasetTableName, '.')[2],\n\t\tName = split(DatasetTableName, '.')[3]) ~> SplitTFV\nSplitTFQ, SplitTFV union(byName: true)~> CombineData\nCombineData aggregate(groupBy(Dataset,\n\t\tName),\n\tFilePath = first(FilePath)) ~> DistinctData\nDistinctData alterRow(upsertIf(true())) ~> UpsertTables\nTableFromQuery aggregate(groupBy(FilePath,\n\t\tDatasetTableName),\n\tLineNumber = first(LineNumber)) ~> DistinctTFQ\nTableFromView aggregate(groupBy(FilePath,\n\t\tDatasetTableName),\n\tLineNumber = first(LineNumber)) ~> DistinctTFV\nUpsertTables sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['TestSinkTables.csv'],\n\tmapColumn(\n\t\tDataset,\n\t\tName,\n\t\tFilePath,\n\t\tLineNumber,\n\t\tDatasetTableName\n\t),\n\tpartitionBy('hash', 1),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> TestResult"
 		}
 	}
 }
