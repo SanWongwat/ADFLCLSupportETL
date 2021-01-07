@@ -1,0 +1,76 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "LCLSupportETL"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/PopulateTablesTable')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "table_from_query_txt",
+								"type": "DatasetReference"
+							},
+							"name": "TableFromQuery"
+						},
+						{
+							"dataset": {
+								"referenceName": "table_from_view_txt",
+								"type": "DatasetReference"
+							},
+							"name": "TableFromView"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "TestResult",
+								"type": "DatasetReference"
+							},
+							"name": "TestResult"
+						}
+					],
+					"transformations": [
+						{
+							"name": "SplitTFQ"
+						},
+						{
+							"name": "SplitTFV"
+						},
+						{
+							"name": "CombineData"
+						},
+						{
+							"name": "DistinctData"
+						},
+						{
+							"name": "UpsertTables"
+						},
+						{
+							"name": "DistinctTFQ"
+						},
+						{
+							"name": "DistinctTFV"
+						}
+					],
+					"script": "source(output(\n\t\tFilePath as string,\n\t\tLineNumber as string,\n\t\tDatasetTableName as string\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> TableFromQuery\nsource(output(\n\t\tFilePath as string,\n\t\tLineNumber as string,\n\t\tDatasetTableName as string\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> TableFromView\nDistinctTFQ derive(Dataset = split(DatasetTableName, '.')[1],\n\t\tName = split(DatasetTableName, '.')[2]) ~> SplitTFQ\nDistinctTFV derive(Dataset = split(DatasetTableName, '.')[2],\n\t\tName = split(DatasetTableName, '.')[3]) ~> SplitTFV\nSplitTFQ, SplitTFV union(byName: true)~> CombineData\nCombineData aggregate(groupBy(Dataset,\n\t\tName),\n\tFilePath = first(FilePath)) ~> DistinctData\nDistinctData alterRow(upsertIf(true())) ~> UpsertTables\nTableFromQuery aggregate(groupBy(FilePath,\n\t\tDatasetTableName),\n\tLineNumber = first(LineNumber)) ~> DistinctTFQ\nTableFromView aggregate(groupBy(FilePath,\n\t\tDatasetTableName),\n\tLineNumber = first(LineNumber)) ~> DistinctTFV\nUpsertTables sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['TestSinkTables.csv'],\n\tmapColumn(\n\t\tDataset,\n\t\tName,\n\t\tFilePath\n\t),\n\tpartitionBy('hash', 1),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> TestResult"
+				}
+			},
+			"dependsOn": []
+		}
+	]
+}
