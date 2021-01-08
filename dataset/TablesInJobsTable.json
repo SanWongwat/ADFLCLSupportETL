@@ -1,0 +1,27 @@
+{
+	"name": "TablesInJobsTable",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "autosys_job_db",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "JobID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "TableID",
+				"type": "int",
+				"precision": 10
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "TablesInJobs"
+		}
+	}
+}
