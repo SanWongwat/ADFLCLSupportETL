@@ -50,7 +50,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@not(empty(activity('Check FIles In Blob').output.childItems))",
+						"value": "@and(not(empty(activity('Check FIles In Blob').output.childItems)), activity('Check If DB Is Up').output.exist == true())",
 						"type": "Expression"
 					},
 					"ifTrueActivities": [
