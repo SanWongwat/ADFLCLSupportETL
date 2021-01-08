@@ -190,7 +190,9 @@
 						"referenceName": "BoxesTable",
 						"type": "DatasetReference"
 					},
-					"fieldList": []
+					"fieldList": [
+						"exists"
+					]
 				}
 			}
 		],
